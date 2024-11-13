@@ -72,21 +72,54 @@ const BitcoinTracker = () => {
   };
 
   const calculatePortfolioData = () => {
-    let totalBtc = 0;
-    let totalInvested = 0;
-    return transactions.map(t => {
-      totalBtc += t.btcAmount;
-      totalInvested += currency === 'USD' ? t.usdAmount : t.brlAmount;
-      const pricePoint = chartData.find(p => p.date === t.date);
+    // Criar um mapa para acumular BTC por data
+    const btcAccumulated = new Map();
+    let runningBtcTotal = 0;
+    
+    // Primeiro, calcular o BTC acumulado para cada data
+    transactions.forEach(t => {
+      runningBtcTotal += t.btcAmount;
+      btcAccumulated.set(t.date, runningBtcTotal);
+    });
+    
+    // Calcular o investimento acumulado para cada data
+    const investmentAccumulated = new Map();
+    let runningInvestment = 0;
+    transactions.forEach(t => {
+      runningInvestment += currency === 'USD' ? t.usdAmount : t.brlAmount;
+      investmentAccumulated.set(t.date, runningInvestment);
+    });
+    
+    // Mapear os dados do gráfico com os valores acumulados
+    return chartData.map(dataPoint => {
+      const date = dataPoint.date;
+      // Encontrar o último valor de BTC acumulado antes ou igual a esta data
+      const lastBtcTotal = Array.from(btcAccumulated.entries())
+        .filter(([accDate]) => accDate <= date)
+        .reduce((latest, [accDate, total]) => 
+          latest.date <= accDate ? { date: accDate, total } : latest,
+          { date: '', total: 0 }
+        ).total;
+      
+      // Encontrar o último valor investido antes ou igual a esta data
+      const lastInvestment = Array.from(investmentAccumulated.entries())
+        .filter(([accDate]) => accDate <= date)
+        .reduce((latest, [accDate, total]) => 
+          latest.date <= accDate ? { date: accDate, total } : latest,
+          { date: '', total: 0 }
+        ).total;
+      
+      const price = currency === 'USD' ? dataPoint.priceUsd : dataPoint.priceBrl;
+      
       return {
-        date: t.date,
-        invested: totalInvested,
-        portfolioValue: totalBtc * (pricePoint ? 
-          (currency === 'USD' ? pricePoint.priceUsd : pricePoint.priceBrl) : 
-          (currency === 'USD' ? t.btcPrice : t.brlAmount / t.btcAmount))
+        date,
+        invested: lastInvestment,
+        portfolioValue: lastBtcTotal * price,
+        totalBtcAtDate: lastBtcTotal
       };
     });
   };
+
 
   const calculatePerformanceMetrics = useCallback((filteredData, currentPrice) => {
     if (filteredData.length > 0) {
