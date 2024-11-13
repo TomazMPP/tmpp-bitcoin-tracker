@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/tmpp-bitcoin-tracker/static/css/main.7c9ea995.css",
+    "main.js": "/tmpp-bitcoin-tracker/static/js/main.cc207427.js",
+    "static/js/453.f1c5799b.chunk.js": "/tmpp-bitcoin-tracker/static/js/453.f1c5799b.chunk.js",
+    "index.html": "/tmpp-bitcoin-tracker/index.html",
+    "main.7c9ea995.css.map": "/tmpp-bitcoin-tracker/static/css/main.7c9ea995.css.map",
+    "main.cc207427.js.map": "/tmpp-bitcoin-tracker/static/js/main.cc207427.js.map",
+    "453.f1c5799b.chunk.js.map": "/tmpp-bitcoin-tracker/static/js/453.f1c5799b.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.7c9ea995.css",
+    "static/js/main.cc207427.js"
+  ]
+}
