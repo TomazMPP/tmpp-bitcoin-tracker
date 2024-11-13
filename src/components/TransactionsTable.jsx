@@ -1,11 +1,11 @@
 import React from 'react';
 import { ArrowDownUp, TrendingUp, TrendingDown } from 'lucide-react';
 
-const TransactionsTable = ({ transactions, currentBtcPrice }) => {
+const TransactionsTable = ({ transactions, currentBtcPrice, currency }) => {
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(currency === 'USD' ? 'en-US' : 'pt-BR', {
       style: 'currency',
-      currency: 'USD',
+      currency: currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value);
@@ -27,14 +27,14 @@ const TransactionsTable = ({ transactions, currentBtcPrice }) => {
   };
 
   const formatDateTime = (dateString) => {
-    return new Date(dateString).toLocaleString('en-US', {
+    return new Date(dateString).toLocaleString(currency === 'USD' ? 'en-US' : 'pt-BR', {
       timeZone: 'UTC',
       year: 'numeric',
       month: 'short',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-      hour12: true
+      hour12: currency === 'USD'
     }) + ' UTC';
   };
 
@@ -45,10 +45,11 @@ const TransactionsTable = ({ transactions, currentBtcPrice }) => {
 
   // Calculate totals
   const totals = transactions.reduce((acc, transaction) => {
+    const amount = currency === 'USD' ? transaction.usdAmount : transaction.brlAmount;
     const currentValue = transaction.btcAmount * currentBtcPrice;
     return {
       btcAmount: acc.btcAmount + transaction.btcAmount,
-      cost: acc.cost + transaction.usdAmount,
+      cost: acc.cost + amount,
       currentValue: acc.currentValue + currentValue,
     };
   }, { btcAmount: 0, cost: 0, currentValue: 0 });
@@ -95,9 +96,11 @@ const TransactionsTable = ({ transactions, currentBtcPrice }) => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {sortedTransactions.map((transaction, idx) => {
+                  const amount = currency === 'USD' ? transaction.usdAmount : transaction.brlAmount;
+                  const purchasePrice = currency === 'USD' ? transaction.btcPrice : transaction.brlAmount / transaction.btcAmount;
                   const currentValue = transaction.btcAmount * currentBtcPrice;
-                  const pl = currentValue - transaction.usdAmount;
-                  const plPercentage = (pl / transaction.usdAmount);
+                  const pl = currentValue - amount;
+                  const plPercentage = pl / amount;
                   const isPositive = pl >= 0;
 
                   return (
@@ -106,13 +109,13 @@ const TransactionsTable = ({ transactions, currentBtcPrice }) => {
                         {formatDateTime(transaction.date)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                        {formatCurrency(transaction.btcPrice)}
+                        {formatCurrency(purchasePrice)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
                         {formatBtc(transaction.btcAmount)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                        {formatCurrency(transaction.usdAmount)}
+                        {formatCurrency(amount)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
                         {formatCurrency(currentValue)}
@@ -141,19 +144,19 @@ const TransactionsTable = ({ transactions, currentBtcPrice }) => {
                     TOTAL
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                    <div className="text-xs text-gray-500">dollar cost average</div>
+                    <div className="text-xs text-gray-500">average price</div>
                     {formatCurrency(dollarCostAverage)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                  <div className="text-xs text-gray-500">amount</div>
-                  ₿{formatBtc(totals.btcAmount)}
+                    <div className="text-xs text-gray-500">amount</div>
+                    ₿{formatBtc(totals.btcAmount)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                  <div className="text-xs text-gray-500">cost</div>
+                    <div className="text-xs text-gray-500">cost</div>
                     {formatCurrency(totals.cost)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                  <div className="text-xs text-gray-500">current value</div>
+                    <div className="text-xs text-gray-500">current value</div>
                     {formatCurrency(totals.currentValue)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
