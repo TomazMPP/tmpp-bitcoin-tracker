@@ -152,7 +152,7 @@ const BitcoinTracker = () => {
     fetchCurrentPrice();
 
     // Configurar o intervalo de 10 segundos
-    const interval = setInterval(fetchCurrentPrice, 20000);
+    const interval = setInterval(fetchCurrentPrice, 5000);
 
     // Limpar o intervalo quando o componente for desmontado
     return () => clearInterval(interval);
