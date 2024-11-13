@@ -24,8 +24,8 @@ const BitcoinTracker = () => {
   const totalInvestedBrl = transactions.reduce((sum, t) => sum + t.brlAmount, 0);
   const dcaUsd = totalInvestedUsd / totalBtc;
   const dcaBrl = totalInvestedBrl / totalBtc;
-  
-  // Get current values based on selected currency - usando useCallback
+
+  // Get current values based on selected currency
   const getCurrentPrice = useCallback(() => 
     currency === 'USD' ? currentBtcPrice.usd : currentBtcPrice.brl
   , [currency, currentBtcPrice]);
@@ -34,12 +34,222 @@ const BitcoinTracker = () => {
     currency === 'USD' ? dcaUsd : dcaBrl
   , [currency, dcaUsd, dcaBrl]);
 
+  // Calculate performance metrics
+  const calculatePerformanceMetrics = useCallback((data, currentPrice) => {
+    if (data.length > 0) {
+      const previousDayPrice = data[data.length - 2]?.[currency === 'USD' ? 'priceUsd' : 'priceBrl'] || currentPrice;
+      const previousWeekPrice = data[data.length - 8]?.[currency === 'USD' ? 'priceUsd' : 'priceBrl'] || currentPrice;
+
+      // Daily changes
+      const dailyPriceChange = currentPrice - previousDayPrice;
+      const dailyPriceChangePercent = (dailyPriceChange / previousDayPrice) * 100;
+      const dailyPortfolioChange = dailyPriceChange * totalBtc;
+      const dailyPortfolioChangePercent = dailyPriceChangePercent;
+
+      // Weekly changes
+      const weeklyPriceChange = currentPrice - previousWeekPrice;
+      const weeklyPriceChangePercent = (weeklyPriceChange / previousWeekPrice) * 100;
+      const weeklyPortfolioChange = weeklyPriceChange * totalBtc;
+      const weeklyPortfolioChangePercent = weeklyPriceChangePercent;
+
+      return {
+        daily: {
+          priceChange: dailyPriceChange,
+          priceChangePercent: dailyPriceChangePercent,
+          portfolioChange: dailyPortfolioChange,
+          portfolioChangePercent: dailyPortfolioChangePercent
+        },
+        weekly: {
+          priceChange: weeklyPriceChange,
+          priceChangePercent: weeklyPriceChangePercent,
+          portfolioChange: weeklyPortfolioChange,
+          portfolioChangePercent: weeklyPortfolioChangePercent
+        }
+      };
+    }
+    return null;
+  }, [currency, totalBtc]);
+
+  // Função para buscar apenas o preço atual do Bitcoin
+  const fetchCurrentPrice = async () => {
+    try {
+      const [usdResponse, brlResponse] = await Promise.all([
+        fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd'),
+        fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=brl')
+      ]);
+
+      const usdData = await usdResponse.json();
+      const brlData = await brlResponse.json();
+
+      const newPrices = {
+        usd: usdData.bitcoin.usd,
+        brl: brlData.bitcoin.brl
+      };
+
+      setCurrentBtcPrice(newPrices);
+
+      // Atualizar o último ponto do gráfico com o novo preço
+      setChartData(prevData => {
+        if (prevData.length === 0) return prevData;
+        
+        const newData = [...prevData];
+        const lastPoint = { 
+          ...newData[newData.length - 1],
+          priceUsd: newPrices.usd,
+          priceBrl: newPrices.brl,
+          date: new Date().toISOString().split('T')[0]
+        };
+        newData[newData.length - 1] = lastPoint;
+        
+        // Recalcular performance com os novos preços
+        const dailyPerf = calculatePerformanceMetrics(newData, newPrices[currency.toLowerCase()]);
+        if (dailyPerf) {
+          setPerformance(dailyPerf);
+        }
+        
+        return newData;
+      });
+    } catch (error) {
+      console.error('Error fetching current Bitcoin price:', error);
+    }
+  };
+
   // Calculate P/L
   const pl = totalBtc * (getCurrentPrice() - getCurrentDca());
   
   // Calculate current portfolio value
   const portfolioValue = totalBtc * getCurrentPrice();
 
+  // Format functions
+  const formatCurrency = (value) => {
+    if (!value) return '-';
+    return new Intl.NumberFormat(currency === 'USD' ? 'en-US' : 'pt-BR', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  };
+
+  const formatPercentage = (value) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'percent',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value / 100);
+  };
+
+  const formatBtc = (value) => {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 8,
+      maximumFractionDigits: 8,
+    }).format(value);
+  };
+
+  // Effects
+  useEffect(() => {
+    // Primeira atualização imediata
+    fetchCurrentPrice();
+
+    // Configurar o intervalo de 10 segundos
+    const interval = setInterval(fetchCurrentPrice, 20000);
+
+    // Limpar o intervalo quando o componente for desmontado
+    return () => clearInterval(interval);
+  }, []); // Dependência vazia para executar apenas na montagem
+
+  // Efeito principal para buscar dados históricos
+  useEffect(() => {
+    const fetchBitcoinData = async () => {
+      try {
+        const firstTransactionDate = new Date(transactions[0].date);
+        const startDate = new Date(firstTransactionDate);
+        startDate.setDate(startDate.getDate() - 15);
+        
+        const today = new Date();
+        const daysDiff = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24));
+
+        const [usdResponse, brlResponse] = await Promise.all([
+          fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=${daysDiff}&interval=daily`),
+          fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=brl&days=${daysDiff}&interval=daily`)
+        ]);
+
+        const usdData = await usdResponse.json();
+        const brlData = await brlResponse.json();
+
+        let totalBtc = 0;
+        let totalUsd = 0;
+        let totalBrl = 0;
+        
+        const formattedData = usdData.prices.map(([timestamp, usdPrice], index) => {
+          const date = new Date(timestamp).toISOString().split('T')[0];
+          const brlPrice = brlData.prices[index][1];
+          const transaction = transactions.find(t => t.date === date);
+          
+          if (transaction) {
+            totalBtc += transaction.btcAmount;
+            totalUsd += transaction.usdAmount;
+            totalBrl += transaction.brlAmount;
+          }
+
+          const dcaUsd = totalBtc > 0 ? totalUsd / totalBtc : null;
+          const dcaBrl = totalBtc > 0 ? totalBrl / totalBtc : null;
+          
+          return {
+            date,
+            priceUsd: usdPrice,
+            priceBrl: brlPrice,
+            isTransaction: !!transaction,
+            transaction,
+            dcaUsd,
+            dcaBrl
+          };
+        });
+
+        const filteredData = formattedData.filter(
+          item => new Date(item.date) >= startDate
+        );
+
+        setChartData(filteredData);
+        
+        // Set initial current price
+        const lastDataPoint = filteredData[filteredData.length - 1];
+        setCurrentBtcPrice({
+          usd: lastDataPoint.priceUsd,
+          brl: lastDataPoint.priceBrl
+        });
+
+        // Calculate initial performance metrics
+        const initialPerf = calculatePerformanceMetrics(
+          filteredData,
+          currency === 'USD' ? lastDataPoint.priceUsd : lastDataPoint.priceBrl
+        );
+        if (initialPerf) {
+          setPerformance(initialPerf);
+        }
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching Bitcoin data:', error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchBitcoinData();
+  }, [transactions, currency, calculatePerformanceMetrics]);
+
+  // Efeito para atualizar métricas quando a moeda muda
+  useEffect(() => {
+    if (chartData.length > 0) {
+      const currentPrice = getCurrentPrice();
+      const newPerformance = calculatePerformanceMetrics(chartData, currentPrice);
+      if (newPerformance) {
+        setPerformance(newPerformance);
+      }
+    }
+  }, [currency, chartData, getCurrentPrice, calculatePerformanceMetrics]);
+
+  // Components
   const CurrencyToggle = () => (
     <button
       onClick={() => setCurrency(prev => prev === 'USD' ? 'BRL' : 'USD')}
@@ -120,148 +330,6 @@ const BitcoinTracker = () => {
     });
   };
 
-
-  const calculatePerformanceMetrics = useCallback((filteredData, currentPrice) => {
-    if (filteredData.length > 0) {
-      const previousDayPrice = filteredData[filteredData.length - 2]?.[currency === 'USD' ? 'priceUsd' : 'priceBrl'] || currentPrice;
-      const previousWeekPrice = filteredData[filteredData.length - 8]?.[currency === 'USD' ? 'priceUsd' : 'priceBrl'] || currentPrice;
-
-      // Daily changes
-      const dailyPriceChange = currentPrice - previousDayPrice;
-      const dailyPriceChangePercent = (dailyPriceChange / previousDayPrice) * 100;
-      const dailyPortfolioChange = dailyPriceChange * totalBtc;
-      const dailyPortfolioChangePercent = dailyPriceChangePercent;
-
-      // Weekly changes
-      const weeklyPriceChange = currentPrice - previousWeekPrice;
-      const weeklyPriceChangePercent = (weeklyPriceChange / previousWeekPrice) * 100;
-      const weeklyPortfolioChange = weeklyPriceChange * totalBtc;
-      const weeklyPortfolioChangePercent = weeklyPriceChangePercent;
-
-      return {
-        daily: {
-          priceChange: dailyPriceChange,
-          priceChangePercent: dailyPriceChangePercent,
-          portfolioChange: dailyPortfolioChange,
-          portfolioChangePercent: dailyPortfolioChangePercent
-        },
-        weekly: {
-          priceChange: weeklyPriceChange,
-          priceChangePercent: weeklyPriceChangePercent,
-          portfolioChange: weeklyPortfolioChange,
-          portfolioChangePercent: weeklyPortfolioChangePercent
-        }
-      };
-    }
-    return null;
-  }, [currency, totalBtc]);
-
-  // Efeito para atualizar métricas quando a moeda muda
-  useEffect(() => {
-    if (chartData.length > 0) {
-      const currentPrice = getCurrentPrice();
-      const newPerformance = calculatePerformanceMetrics(chartData, currentPrice);
-      if (newPerformance) {
-        setPerformance(newPerformance);
-      }
-    }
-  }, [currency, chartData, getCurrentPrice, calculatePerformanceMetrics]);
-
-  // Efeito principal para buscar dados
-  useEffect(() => {
-    const fetchBitcoinData = async () => {
-      try {
-        const firstTransactionDate = new Date(transactions[0].date);
-        const startDate = new Date(firstTransactionDate);
-        startDate.setDate(startDate.getDate() - 15);
-        
-        const today = new Date();
-        const daysDiff = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24));
-
-        const [usdResponse, brlResponse] = await Promise.all([
-          fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=${daysDiff}&interval=daily`),
-          fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=brl&days=${daysDiff}&interval=daily`)
-        ]);
-
-        const usdData = await usdResponse.json();
-        const brlData = await brlResponse.json();
-        
-        const currentUsdPrice = usdData.prices[usdData.prices.length - 1][1];
-        const currentBrlPrice = brlData.prices[brlData.prices.length - 1][1];
-        setCurrentBtcPrice({ 
-          usd: currentUsdPrice, 
-          brl: currentBrlPrice 
-        });
-        
-        let totalBtc = 0;
-        let totalUsd = 0;
-        let totalBrl = 0;
-        
-        const formattedData = usdData.prices.map(([timestamp, usdPrice], index) => {
-          const date = new Date(timestamp).toISOString().split('T')[0];
-          const brlPrice = brlData.prices[index][1];
-          const transaction = transactions.find(t => t.date === date);
-          
-          if (transaction) {
-            totalBtc += transaction.btcAmount;
-            totalUsd += transaction.usdAmount;
-            totalBrl += transaction.brlAmount;
-          }
-
-          const dcaUsd = totalBtc > 0 ? totalUsd / totalBtc : null;
-          const dcaBrl = totalBtc > 0 ? totalBrl / totalBtc : null;
-          
-          return {
-            date,
-            priceUsd: usdPrice,
-            priceBrl: brlPrice,
-            isTransaction: !!transaction,
-            transaction,
-            dcaUsd,
-            dcaBrl
-          };
-        });
-
-        const filteredData = formattedData.filter(
-          item => new Date(item.date) >= startDate
-        );
-
-        setChartData(filteredData);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching Bitcoin data:', error);
-        setIsLoading(false);
-      }
-    };
-
-    fetchBitcoinData();
-  }, [transactions]); // Este efeito só roda uma vez ao montar o componente
-
-  const formatCurrency = (value) => {
-    if (!value) return '-';
-    return new Intl.NumberFormat(currency === 'USD' ? 'en-US' : 'pt-BR', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  };
-
-  const formatPercentage = (value) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'percent',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value / 100);
-  };
-
-  const formatBtc = (value) => {
-    return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 8,
-      maximumFractionDigits: 8,
-    }).format(value);
-  };
-
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -323,6 +391,7 @@ const BitcoinTracker = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
             TMPP Bitcoin Tracker
@@ -431,69 +500,69 @@ const BitcoinTracker = () => {
         {/* Charts Section */}
         <div className="space-y-8">
           {/* Price Chart */}
-<div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
-  <h2 className="text-xl font-semibold text-gray-900 mb-6">Bitcoin Price History</h2>
-  <div className="h-[400px]">
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-        <XAxis 
-          dataKey="date" 
-          tick={{ fontSize: 12 }}
-          interval="preserveStartEnd"
-          stroke="#9CA3AF"
-        />
-        <YAxis 
-          domain={['auto', 'auto']}
-          tick={{ fontSize: 12 }}
-          tickFormatter={(value) => {
-            return new Intl.NumberFormat(currency === 'USD' ? 'en-US' : 'pt-BR', {
-              style: 'currency',
-              currency: currency,
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            }).format(value);
-          }}
-          stroke="#9CA3AF"
-          width={80}
-        />
-        <Tooltip content={<CustomTooltip />} />
-        <Legend />
-        <Line 
-          type="monotone" 
-          dataKey={currency === 'USD' ? 'dcaUsd' : 'dcaBrl'}
-          name="Dollar Cost Average (DCA)"
-          stroke="#10B981" 
-          strokeDasharray="5 5"
-          dot={false}
-          strokeWidth={2}
-        />
-        <Line 
-          type="monotone" 
-          dataKey={currency === 'USD' ? 'priceUsd' : 'priceBrl'}
-          name="Bitcoin Price"
-          stroke="#3B82F6" 
-          dot={false}
-          strokeWidth={2}
-        />
-        <Line 
-          type="monotone"
-          dataKey={d => d.isTransaction ? (currency === 'USD' ? d.priceUsd : d.priceBrl) : null}
-          name="Buys"
-          stroke="#10B981"
-          strokeWidth={0}
-          dot={{
-            r: 6,
-            fill: '#10B981',
-            stroke: 'white',
-            strokeWidth: 2
-          }}
-          legendType="circle"
-          isAnimationActive={false}
-        />
-      </LineChart>
-    </ResponsiveContainer>
-  </div>
-</div>
+          <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Bitcoin Price History</h2>
+            <div className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12 }}
+                    interval="preserveStartEnd"
+                    stroke="#9CA3AF"
+                  />
+                  <YAxis 
+                    domain={['auto', 'auto']}
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(value) => {
+                      return new Intl.NumberFormat(currency === 'USD' ? 'en-US' : 'pt-BR', {
+                        style: 'currency',
+                        currency: currency,
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(value);
+                    }}
+                    stroke="#9CA3AF"
+                    width={80}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey={currency === 'USD' ? 'dcaUsd' : 'dcaBrl'}
+                    name="Dollar Cost Average (DCA)"
+                    stroke="#10B981" 
+                    strokeDasharray="5 5"
+                    dot={false}
+                    strokeWidth={2}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey={currency === 'USD' ? 'priceUsd' : 'priceBrl'}
+                    name="Bitcoin Price"
+                    stroke="#3B82F6" 
+                    dot={false}
+                    strokeWidth={2}
+                  />
+                  <Line 
+                    type="monotone"
+                    dataKey={d => d.isTransaction ? (currency === 'USD' ? d.priceUsd : d.priceBrl) : null}
+                    name="Buys"
+                    stroke="#10B981"
+                    strokeWidth={0}
+                    dot={{
+                      r: 6,
+                      fill: '#10B981',
+                      stroke: 'white',
+                      strokeWidth: 2
+                    }}
+                    legendType="circle"
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
           {/* Portfolio Value Chart */}
           <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
