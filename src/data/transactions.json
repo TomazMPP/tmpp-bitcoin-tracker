@@ -6,7 +6,7 @@
       "btcPrice": 66220.44,
       "brlAmount": 747.50,
       "btcAmount": 0.00200497,
-      "currentValue": 176.52
+      "currentValue": 181.17
     },
     {
       "date": "2024-06-19",
@@ -14,7 +14,7 @@
       "btcPrice": 64834.54,
       "brlAmount": 3556.28,
       "btcAmount": 0.00967401,
-      "currentValue": 851.70
+      "currentValue": 874.13
     },
     {
       "date": "2024-06-20",
@@ -22,87 +22,87 @@
       "btcPrice": 64918.95,
       "brlAmount": 971.12,
       "btcAmount": 0.00261064,
-      "currentValue": 229.84
+      "currentValue": 235.89
     },
     {
       "date": "2024-06-24",
       "usdAmount": 995.27,
       "btcPrice": 60296.96,
-      "brlAmount": 5682.99,
+      "brlAmount": 5364.51,
       "btcAmount": 0.01650614,
-      "currentValue": 1453.19
+      "currentValue": 1491.48
     },
     {
       "date": "2024-06-24",
       "usdAmount": 681.35,
-      "btcPrice": 60296.99,
-      "brlAmount": 3890.51,
-      "btcAmount": 0.01125,
-      "currentValue": 994.84
+      "btcPrice": 60564.44,
+      "brlAmount": 3672.48,
+      "btcAmount": 0.01125000,
+      "currentValue": 1016.54
     },
     {
       "date": "2024-07-04",
       "usdAmount": 3000.00,
       "btcPrice": 59286.36,
-      "brlAmount": 17130.00,
+      "brlAmount": 16470.00,
       "btcAmount": 0.05060186,
-      "currentValue": 4454.97
+      "currentValue": 4572.33
     },
     {
       "date": "2024-07-24",
       "usdAmount": 2416.00,
       "btcPrice": 65428.07,
-      "brlAmount": 13795.36,
+      "brlAmount": 13650.40,
       "btcAmount": 0.03692605,
-      "currentValue": 3250.95
+      "currentValue": 3336.60
     },
     {
       "date": "2024-09-06",
       "usdAmount": 2114.00,
       "btcPrice": 54368.99,
-      "brlAmount": 12070.94,
+      "brlAmount": 11838.40,
       "btcAmount": 0.03888246,
-      "currentValue": 3423.20
+      "currentValue": 3513.38
     },
     {
       "date": "2024-11-07",
       "usdAmount": 2000.00,
       "btcPrice": 75266.35,
-      "brlAmount": 11420.00,
+      "brlAmount": 11380.00,
       "btcAmount": 0.02657230,
-      "currentValue": 2339.41
+      "currentValue": 2401.05
     },
     {
       "date": "2024-11-11",
       "usdAmount": 900.00,
       "btcPrice": 86240.27,
-      "brlAmount": 5139.00,
+      "brlAmount": 5184.00,
       "btcAmount": 0.01043596,
-      "currentValue": 918.78
+      "currentValue": 942.98
     },
     {
       "date": "2024-11-13",
       "usdAmount": 856.00,
       "btcPrice": 93876.94,
-      "brlAmount": 4887.76,
+      "brlAmount": 4973.36,
       "btcAmount": 0.00911832,
-      "currentValue": 856.00
+      "currentValue": 823.92
     },
     {
       "date": "2024-11-14",
       "usdAmount": 264.57,
       "btcPrice": 89398.97,
-      "brlAmount": 1510.69,
+      "brlAmount": 1531.86,
       "btcAmount": 0.00295943,
-      "currentValue": 260.92
+      "currentValue": 267.41
     },
     {
       "date": "2024-11-15",
       "usdAmount": 628.77,
       "btcPrice": 90447.99,
-      "brlAmount": 3590.28,
+      "brlAmount": 3646.87,
       "btcAmount": 0.00695173,
-      "currentValue": 624.58
+      "currentValue": 628.15
     },
     {
       "date": "2024-11-17",
@@ -110,14 +110,22 @@
       "btcPrice": 91737.37,
       "brlAmount": 2012.43,
       "btcAmount": 0.00378221,
-      "currentValue": 344.28
+      "currentValue": 341.76
+    },
+    {
+      "date": "2024-11-18",
+      "usdAmount": 648.40,
+      "btcPrice": 90855.72,
+      "brlAmount": 3721.82,
+      "btcAmount": 0.00713659,
+      "currentValue": 644.85
     }
-    ],
+  ],
   "summary": {
-    "totalInvested": 15132.39, 
-    "averagePriceUSD": 66524.73,  
-    "averagePriceBRL": 379806.12, 
-    "currentValue": 20536.01,     
-    "totalBtcAmount": 0.22827608
+    "totalInvested": 15780.79,
+    "averagePriceUSD": 66524.73,
+    "averagePriceBRL": 379806.12,
+    "currentValue": 21271.64,
+    "totalBtcAmount": 0.23541267
   }
 }
