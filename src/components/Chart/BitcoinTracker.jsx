@@ -22,17 +22,35 @@ const BitcoinTracker = () => {
   // Calculate DCA for both currencies
   const totalInvestedUsd = transactions.reduce((sum, t) => sum + t.usdAmount, 0);
   const totalInvestedBrl = transactions.reduce((sum, t) => sum + t.brlAmount, 0);
-  const dcaUsd = totalInvestedUsd / totalBtc;
-  const dcaBrl = totalInvestedBrl / totalBtc;
+ 
+  const getDcaForDate = (date) => {
+  const relevantTransactions = transactions
+    .filter(t => t.date <= date);
+  
+  const totalBtc = relevantTransactions
+    .reduce((sum, t) => sum + t.btcAmount, 0);
+  
+  const totalUsd = relevantTransactions
+    .reduce((sum, t) => sum + t.usdAmount, 0);
+  
+  const totalBrl = relevantTransactions
+    .reduce((sum, t) => sum + t.brlAmount, 0);
+    
+  return {
+    dcaUsd: totalBtc > 0 ? totalUsd / totalBtc : null,
+    dcaBrl: totalBtc > 0 ? totalBrl / totalBtc : null
+  };
+};
 
   // Get current values based on selected currency
   const getCurrentPrice = useCallback(() => 
     currency === 'USD' ? currentBtcPrice.usd : currentBtcPrice.brl
   , [currency, currentBtcPrice]);
 
-  const getCurrentDca = useCallback(() => 
-    currency === 'USD' ? dcaUsd : dcaBrl
-  , [currency, dcaUsd, dcaBrl]);
+  const getCurrentDca = useCallback(() => {
+    const { dcaUsd, dcaBrl } = getDcaForDate(new Date().toISOString().split('T')[0]);
+    return currency === 'USD' ? dcaUsd : dcaBrl;
+  }, [currency]);
 
   // Calculate performance metrics
   const calculatePerformanceMetrics = useCallback((data, currentPrice) => {
@@ -183,6 +201,7 @@ const BitcoinTracker = () => {
         
         const formattedData = usdData.prices.map(([timestamp, usdPrice], index) => {
           const date = new Date(timestamp).toISOString().split('T')[0];
+          const { dcaUsd, dcaBrl } = getDcaForDate(date);
           const brlPrice = brlData.prices[index][1];
           const transaction = transactions.find(t => t.date === date);
           
@@ -191,9 +210,6 @@ const BitcoinTracker = () => {
             totalUsd += transaction.usdAmount;
             totalBrl += transaction.brlAmount;
           }
-
-          const dcaUsd = totalBtc > 0 ? totalUsd / totalBtc : null;
-          const dcaBrl = totalBtc > 0 ? totalBrl / totalBtc : null;
           
           return {
             date,
