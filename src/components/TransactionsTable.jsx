@@ -26,8 +26,8 @@ const TransactionsTable = ({ transactions, currentBtcPrice, currency }) => {
     }).format(value);
   };
 
-  const formatDateTime = (dateString) => {
-    return new Date(dateString).toLocaleString(currency === 'USD' ? 'en-US' : 'pt-BR', {
+  const formatDateTime = (timestamp) => {
+    return new Date(timestamp).toLocaleString(currency === 'USD' ? 'en-US' : 'pt-BR', {
       timeZone: 'UTC',
       year: 'numeric',
       month: 'short',
@@ -38,9 +38,9 @@ const TransactionsTable = ({ transactions, currentBtcPrice, currency }) => {
     }) + ' UTC';
   };
 
-  // Sort transactions by date (newest first)
+  // Sort transactions by timestamp (newest first)
   const sortedTransactions = [...transactions].sort((a, b) => 
-    new Date(b.date) - new Date(a.date)
+    new Date(b.timestamp) - new Date(a.timestamp)
   );
 
   // Calculate totals
@@ -106,7 +106,7 @@ const TransactionsTable = ({ transactions, currentBtcPrice, currency }) => {
                   return (
                     <tr key={idx} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatDateTime(transaction.date)}
+                        {formatDateTime(transaction.timestamp)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
                         {formatCurrency(purchasePrice)}
