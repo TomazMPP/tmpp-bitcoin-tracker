@@ -92,8 +92,8 @@ const BitcoinTracker = () => {
   const fetchCurrentPrice = async () => {
     try {
       const [usdResponse, brlResponse] = await Promise.all([
-        fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd'),
-        fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=brl')
+        fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT'),
+        fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCBRL')
       ]);
 
       const usdData = await usdResponse.json();
@@ -131,6 +131,46 @@ const BitcoinTracker = () => {
       console.error('Error fetching current Bitcoin price:', error);
     }
   };
+
+  const fetchHistoricalData = async (startTimestamp) => {
+    try {
+      // Binance uses millisecond timestamps
+      const endTimestamp = Date.now();
+      const interval = '1d'; // Daily interval
+
+      const [usdResponse, brlResponse] = await Promise.all([
+        fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&startTime=${startTimestamp}&endTime=${endTimestamp}`),
+        fetch(`https://api.binance.com/api/v3/klines?symbol=BTCBRL&interval=${interval}&startTime=${startTimestamp}&endTime=${endTimestamp}`)
+      ]);
+
+      const usdKlines = await usdResponse.json();
+      const brlKlines = await brlResponse.json();
+
+      // Transform klines data into the format we need
+      return usdKlines.map((usdKline, index) => {
+        const brlKline = brlKlines[index];
+        const timestamp = usdKline[0];
+        const date = new Date(timestamp).toISOString().split('T')[0];
+        const { dcaUsd, dcaBrl } = getDcaForDate(date);
+        
+        // Binance klines format: [timestamp, open, high, low, close, volume, ...]
+        // We'll use the closing price (index 4)
+        return {
+          date,
+          priceUsd: parseFloat(usdKline[4]),
+          priceBrl: parseFloat(brlKline[4]),
+          isTransaction: transactions.some(t => t.date === date),
+          transaction: transactions.find(t => t.date === date),
+          dcaUsd,
+          dcaBrl
+        };
+      });
+    } catch (error) {
+      console.error('Error fetching historical data:', error);
+      return [];
+    }
+  };
+
 
   // Calculate P/L
   const pl = totalBtc * (getCurrentPrice() - getCurrentDca());
@@ -180,16 +220,17 @@ const BitcoinTracker = () => {
   useEffect(() => {
     const fetchBitcoinData = async () => {
       try {
+        setIsLoading(true);
         const firstTransactionDate = new Date(transactions[0].date);
         const startDate = new Date(firstTransactionDate);
         startDate.setDate(startDate.getDate() - 15);
         
-        const today = new Date();
-        const daysDiff = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24));
+        const endDate = new Date();
+        const interval = '1d'; // intervalo diário
 
         const [usdResponse, brlResponse] = await Promise.all([
-          fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=${daysDiff}&interval=daily`),
-          fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=brl&days=${daysDiff}&interval=daily`)
+          fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&startTime=${startDate.getTime()}&endTime=${endDate.getTime()}`),
+          fetch(`https://api.binance.com/api/v3/klines?symbol=BTCBRL&interval=${interval}&startTime=${startDate.getTime()}&endTime=${endDate.getTime()}`)
         ]);
 
         const usdData = await usdResponse.json();
@@ -199,11 +240,14 @@ const BitcoinTracker = () => {
         let totalUsd = 0;
         let totalBrl = 0;
         
-        const formattedData = usdData.prices.map(([timestamp, usdPrice], index) => {
-          const date = new Date(timestamp).toISOString().split('T')[0];
+        const formattedData = usdData.map((usdKline, index) => {
+          const date = new Date(usdKline[0]).toISOString().split('T')[0];
           const { dcaUsd, dcaBrl } = getDcaForDate(date);
-          const brlPrice = brlData.prices[index][1];
           const transaction = transactions.find(t => t.date === date);
+          
+          // Preços de fechamento da Binance (índice 4 no array kline)
+          const usdPrice = parseFloat(usdKline[4]);
+          const brlPrice = parseFloat(brlData[index][4]);
           
           if (transaction) {
             totalBtc += transaction.btcAmount;
