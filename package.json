@@ -2,7 +2,7 @@
   "name": "bitcoin-portfolio-tracker",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://portfoliodebitcoin.com.br/",
+  "homepage": ".",
   "dependencies": {
     "@headlessui/react": "^2.2.0",
     "@testing-library/jest-dom": "^5.17.0",
