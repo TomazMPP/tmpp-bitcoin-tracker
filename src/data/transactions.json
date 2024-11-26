@@ -152,13 +152,15 @@
       "brlAmount": 2278.24,
       "btcAmount": 0.00392094,
       "currentValue": 379.41
+    },
+    {
+      "date": "2024-11-25",
+      "timestamp": "2024-11-24T12:54:50Z",
+      "usdAmount": 1845.8,
+      "btcPrice": 93407.67,
+      "brlAmount": 10705.64,
+      "btcAmount": 0.01976069,
+      "currentValue": 1850.03
     }
-  ],
-  "summary": {
-    "totalInvested": 15780.79,
-    "averagePriceUSD": 66524.73,
-    "averagePriceBRL": 379806.12,
-    "currentValue": 21271.64,
-    "totalBtcAmount": 0.23541267
-  }
+  ]
 }
