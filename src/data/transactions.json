@@ -166,18 +166,18 @@
       "date": "2024-12-09",
       "timestamp": "2024-12-09T01:07:28Z",
       "usdAmount": 200,
-      "btcPrice": 99906.63,
+      "btcPrice": 102928.31,
       "brlAmount": 1210,
-      "btcAmount": 0.0019981,
+      "btcAmount": 0.00194310,
       "currentValue": 201.09
     },
     {
       "date": "2024-12-16",
       "timestamp": "2024-12-16T17:14:04Z",
       "usdAmount": 935.57,
-      "btcPrice": 106800.39,
+      "btcPrice": 107475.18,
       "brlAmount": 5676.58,
-      "btcAmount": 0.00876,
+      "btcAmount": 0.00870500,
       "currentValue": 935.18
     }
   ]
