@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } f
 import { DollarSign, Coins } from 'lucide-react';
 import transactionsData from '../../data/transactions.json';
 import TransactionsTable from '../TransactionsTable';
+import BitcoinPriceChart from './BitcoinPriceChart';
 
 const BitcoinTracker = () => {
   const [chartData, setChartData] = useState([]);
@@ -559,70 +560,13 @@ const BitcoinTracker = () => {
 
         {/* Charts Section */}
         <div className="space-y-8">
-          {/* Price Chart */}
-          <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Bitcoin Price History</h2>
-            <div className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 12 }}
-                    interval="preserveStartEnd"
-                    stroke="#9CA3AF"
-                  />
-                  <YAxis 
-                    domain={['auto', 'auto']}
-                    tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => {
-                      return new Intl.NumberFormat(currency === 'USD' ? 'en-US' : 'pt-BR', {
-                        style: 'currency',
-                        currency: currency,
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      }).format(value);
-                    }}
-                    stroke="#9CA3AF"
-                    width={80}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey={currency === 'USD' ? 'dcaUsd' : 'dcaBrl'}
-                    name="Dollar Cost Average (DCA)"
-                    stroke="#10B981" 
-                    strokeDasharray="5 5"
-                    dot={false}
-                    strokeWidth={2}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey={currency === 'USD' ? 'priceUsd' : 'priceBrl'}
-                    name="Bitcoin Price"
-                    stroke="#3B82F6" 
-                    dot={false}
-                    strokeWidth={2}
-                  />
-                  <Line 
-                    type="monotone"
-                    dataKey={d => d.isTransaction ? (currency === 'USD' ? d.priceUsd : d.priceBrl) : null}
-                    name="Buys"
-                    stroke="#10B981"
-                    strokeWidth={0}
-                    dot={{
-                      r: 6,
-                      fill: '#10B981',
-                      stroke: 'white',
-                      strokeWidth: 2
-                    }}
-                    legendType="circle"
-                    isAnimationActive={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+{/* Price Chart */}
+<BitcoinPriceChart 
+  chartData={chartData}
+  currency={currency}
+  CustomTooltip={CustomTooltip}
+  formatCurrency={formatCurrency}
+/>
 
           {/* Portfolio Value Chart */}
           <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
