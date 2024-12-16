@@ -174,7 +174,17 @@ const BitcoinTracker = () => {
 
 
   // Calculate P/L
-  const pl = totalBtc * (getCurrentPrice() - getCurrentDca());
+  const calculatePL = () => {
+    const currentValue = totalBtc * getCurrentPrice();
+    const totalInvested = currency === 'USD' ? totalInvestedUsd : totalInvestedBrl;
+    const absolutePL = currentValue - totalInvested;
+    const percentagePL = totalInvested > 0 ? (absolutePL / totalInvested) * 100 : 0;
+    
+    return {
+      absolute: absolutePL,
+      percentage: percentagePL
+    };
+  };
   
   // Calculate current portfolio value
   const portfolioValue = totalBtc * getCurrentPrice();
@@ -488,9 +498,9 @@ const BitcoinTracker = () => {
                   </p>
                   <p className="text-sm text-gray-600 flex justify-between">
                     <span>✅ P/L:</span>
-                    <span className={`font-medium ${pl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(pl)}
-                    </span>
+                    <span className={`font-medium ${calculatePL().absolute >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatCurrency(calculatePL().absolute)} ({calculatePL().percentage.toFixed(2)}%)
+              </span>
                   </p>
                 </div>
               </div>
